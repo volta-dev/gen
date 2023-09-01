@@ -6,7 +6,7 @@ class Gen:
 
     # generate dto structs
     def __generate_dto(self):
-        dto = []
+        dto = ["// DTO Section\n"]
 
         for node in self.ast.children:
             if node.data == 'type_def':
@@ -99,13 +99,13 @@ class Gen:
         exchange_name = self.__get_exchange(self.ast)
 
         golang_code = ["func (actor *{}Actor) Init() {{\n".format(exchange_name)]
-        golang_code.append("\tactor.broker.AddExchange(volta.Exchange{{Name: '{}'}})\n".format(exchange_name))
+        golang_code.append("\tactor.broker.AddExchanges(volta.Exchange{{Name: \"{}\"}})\n\n".format(exchange_name))
 
         for node in self.ast.children:
             if node.data == 'action_def':
                 for action in node.children[0].children:
-                    routing_key = action.children[0]
-                    golang_code.append("\tactor.broker.AddQueue(volta.Queue{{Name: '{}', RoutingKey: '{}'}})\n".format(routing_key, routing_key))
+                    routing_key = action.children[3][1]
+                    golang_code.append("\tactor.broker.AddQueue(volta.Queue{{Name: {}, RoutingKey: {}}})\n".format(routing_key, routing_key))
 
         golang_code.append("}\n\n")
 
