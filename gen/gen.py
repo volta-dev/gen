@@ -47,10 +47,20 @@ class Gen:
 
     # generates the struct for the actor
     def __generate_actor_struct(self):
-        exchange = self.__get_exchange(self.ast)
-        return ("type {}Actor struct {{\n"
-                "\tbroker *volta.App"
-                "\n}}\n\n").format(exchange)
+        exchange_name = self.__get_exchange(self.ast)
+        golang_code = ["type {}Actor struct {{\n".format(exchange_name), "\tbroker *volta.App\n\n"]
+
+        for node in self.ast.children:
+            if node.data == 'action_def':
+                for action in node.children[0].children:
+                    function_name = action.children[0]
+
+                    golang_code.append("\t{}{}Callback {}{}Callback\n".format
+                                       (exchange_name[0].lower() + exchange_name[1:], function_name, exchange_name, function_name))
+
+        golang_code.append("}\n\n")
+
+        return "".join(golang_code)
 
     # generates the constructor for the actor
     def __generate_actor_constructor(self):
@@ -60,7 +70,7 @@ class Gen:
 
     # generate callback type for the actor
     def __generate_callback_type(self):
-        exchangeName = self.__get_exchange(self.ast)
+        exchange_name = self.__get_exchange(self.ast)
 
         golang_code = []
 
@@ -75,7 +85,7 @@ class Gen:
                         action_arg = "data " + action_arg
 
                     golang_code.append("type {}{}Callback func({}) {}\n".format
-                                       (exchangeName, function_name, action_arg, return_arg))
+                                       (exchange_name, function_name, action_arg, return_arg))
 
         return "".join(golang_code)
 
@@ -91,9 +101,11 @@ class Gen:
                     function_name = action.children[0]
 
                     golang_code.append(
-                        "func (actor *{}Actor) {}(callback {}{}Callback) error {{\n".format(
+                        "func (actor *{}Actor) Assign{}Callback(callback {}{}Callback) error {{\n".format(
                             exchangeName, function_name, exchangeName, function_name)
                     )
+                    golang_code.append("\tactor.{}{}Callback = callback\n".format(exchangeName[0].lower() + exchangeName[1:], function_name))
+                    golang_code.append("}\n\n")
 
         return "".join(golang_code)
 
