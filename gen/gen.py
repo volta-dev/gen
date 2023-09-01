@@ -48,7 +48,7 @@ class Gen:
     # generates the struct for the actor
     def __generate_actor_struct(self):
         exchange_name = self.__get_exchange(self.ast)
-        golang_code = ["type {}Actor struct {{\n".format(exchange_name), "\tbroker *volta.App\n\n"]
+        golang_code = ["\ntype {}Actor struct {{\n".format(exchange_name), "\tbroker *volta.App\n\n"]
 
         for node in self.ast.children:
             if node.data == 'action_def':
@@ -78,8 +78,8 @@ class Gen:
             if node.data == 'action_def':
                 for action in node.children[0].children:
                     function_name = action.children[0]
-                    action_arg = action.children[1] if action.children[1] != None else ""
-                    return_arg = action.children[2] if action.children[2] != None else ""
+                    action_arg = action.children[1] if action.children[1] is not None else ""
+                    return_arg = action.children[2] if action.children[2] is not None else ""
 
                     if action_arg != "":
                         action_arg = "data " + action_arg
@@ -111,6 +111,7 @@ class Gen:
 
     # generates the entire actor
     def generate(self):
-        code = [self.__generate_dto(), self.__generate_actor_struct(), self.__generate_actor_constructor(),
-                self.__generate_callback_type(), self.__generate_funcs()]
+        code = [self.__generate_dto(), self.__generate_callback_type(), self.__generate_actor_struct(),
+                self.__generate_actor_constructor(), self.__generate_funcs()]
+
         return "".join(code)
