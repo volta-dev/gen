@@ -18,7 +18,7 @@ types {
 
 actions {
     Register(CreateUser) ReturnUser @routingKey("user.register")
-    Fetch() ReturnUser @routingKey("user.register")
+    Fetch1() ReturnUser @routingKey("user.register")
 }
 '''
 

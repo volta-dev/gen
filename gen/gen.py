@@ -35,6 +35,28 @@ class Gen:
 
                     dto.append("}\n\n")
 
+                    # Generate getters and setters for each field
+                    for field_name, field_type in fields:
+                        # Create capitalized field name for methods
+                        method_field_name = field_name.capitalize()
+
+                        # Generate getter
+                        getter = (
+                            "func (s *{}) Get{}() {} {{\n"
+                            "\treturn s.{}\n"
+                            "}}\n\n"
+                        )
+                        dto.append(getter.format(struct_name, method_field_name, field_type, field_name))
+
+                        # Generate setter
+                        setter = (
+                            "func (s *{}) Set{}(value {}) {{\n"
+                            "\ts.{} = value\n"
+                            "\treturn s\n"
+                            "}}\n\n"
+                        )
+                        dto.append(setter.format(struct_name, method_field_name, field_type, field_name))
+
         return "".join(dto)
 
     # finds the exchange name in the ast
@@ -71,6 +93,23 @@ class Gen:
         exchange = self.__get_exchange(self.ast)
         return "func New{}Actor(broker *volta.App) *{}Actor {{\n\treturn &{}Actor{{broker: broker}}\n}}\n\n".format(
             exchange, exchange, exchange)
+
+    # generate the init function for exchange and queues
+    def __generate_init(self):
+        exchange_name = self.__get_exchange(self.ast)
+
+        golang_code = ["func (actor *{}Actor) Init() {{\n".format(exchange_name)]
+        golang_code.append("\tactor.broker.AddExchange(volta.Exchange{{Name: '{}'}})\n".format(exchange_name))
+
+        for node in self.ast.children:
+            if node.data == 'action_def':
+                for action in node.children[0].children:
+                    routing_key = action.children[0]
+                    golang_code.append("\tactor.broker.AddQueue(volta.Queue{{Name: '{}', RoutingKey: '{}'}})\n".format(routing_key, routing_key))
+
+        golang_code.append("}\n\n")
+
+        return "".join(golang_code)
 
     # generate callback type for the actor
     def __generate_callback_type(self):
@@ -116,6 +155,6 @@ class Gen:
     # generates the entire actor
     def generate(self):
         code = [self.__generate_dto(), self.__generate_callback_type(), self.__generate_actor_struct(),
-                self.__generate_actor_constructor(), self.__generate_funcs()]
+                self.__generate_actor_constructor(), self.__generate_init(), self.__generate_funcs()]
 
         return "".join(code)

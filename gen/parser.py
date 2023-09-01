@@ -1,4 +1,4 @@
-from lark import Lark, Transformer, Tree
+from lark import Lark, Transformer, Tree, Token
 
 dsl_grammar = """
     start: exchange? type_def action_def
@@ -8,7 +8,9 @@ dsl_grammar = """
     type_body: type_entry+
     action_body: action_entry+
     type_entry: CNAME "{" param_def+ "}"
-    action_entry: CNAME "(" CNAME? ")" CNAME metadata?
+    action_entry: CNAME "(" action_arg? ")" action_ret? metadata?
+    action_arg: CNAME
+    action_ret: CNAME
     param_def: CNAME CNAME metadata?
     metadata: "@" CNAME routing_key?
     routing_key: "(" ESCAPED_STRING ")" 
@@ -38,14 +40,28 @@ class __transformer(Transformer):
     def action_body(self, args):
         return Tree('action_body', args)
 
+    def action_arg(self, args):
+        return Tree('action_arg', args)
+
+    def action_ret(self, args):
+        return Tree('action_ret', args)
+
     def type_entry(self, args):
         return Tree('type_entry', [args[0], Tree('params', args[1:])])
 
     def action_entry(self, args):
-        if len(args) > 3:
-            return Tree('action_entry', [args[0], args[1], args[2], args[3]])
+        name, func_arg, func_ret, metadata = args[0], None, None, None
 
-        return Tree('action_entry', [args[0], None, args[1], args[2]])
+        for arg in args[1:]:
+            if isinstance(arg, Tree):
+                if arg.data == 'action_arg':
+                    func_arg = arg.children[0]
+                elif arg.data == 'action_ret':
+                    func_ret = arg.children[0]
+                elif arg.data == 'metadata':
+                    metadata = arg.children
+
+        return Tree('action_entry', [name, func_arg, func_ret, metadata])
 
     def param_def(self, args):
         return Tree('param_def', [args[0], args[1], args[2] if len(args) > 2 else None])
