@@ -1,4 +1,6 @@
-import gen.gen
+import gen.actor
+import gen.dto
+import gen.typer as typer
 
 test_input = '''
 exchange = "user"
@@ -21,8 +23,12 @@ actions {
 '''
 
 
-generator = gen.gen.Gen(test_input)
+dto = gen.dto.Dto(test_input)
+gen = gen.actor.Actor(test_input)
+typ = typer.Typer(test_input)
 
 # write to file
 with open('exchange_gen.go', 'w') as f:
-    f.write(generator.generate())
+    f.write(dto.generate())
+    f.write(typ.generate())
+    f.write(gen.generate())
