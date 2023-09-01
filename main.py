@@ -1,6 +1,4 @@
-import gen.dto
-import gen.funcs
-import parse.main
+import gen.gen
 
 test_input = '''
 exchange = "user"
@@ -25,9 +23,6 @@ actions {
 '''
 
 
-ast = parse.main.parser(test_input)
-golang_structs_code = gen.dto.generate(ast)
-golang_funcs_code = gen.funcs.generate(ast)
+generator = gen.gen.Gen(test_input)
 
-print(golang_structs_code)
-print(golang_funcs_code)
+print(generator.generate())

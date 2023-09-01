@@ -19,7 +19,7 @@ dsl_grammar = """
 """
 
 
-class MyTransformer(Transformer):
+class __transformer(Transformer):
     def exchange(self, args):
         return Tree('exchange', args)
 
@@ -45,7 +45,7 @@ class MyTransformer(Transformer):
         if len(args) > 3:
             return Tree('action_entry', [args[0], args[1], args[2], args[3]])
 
-        return Tree('action_entry', [args[0], None, args[2], args[3] if len(args) > 3 else None])
+        return Tree('action_entry', [args[0], None, args[1], args[2]])
 
     def param_def(self, args):
         return Tree('param_def', [args[0], args[1], args[2] if len(args) > 2 else None])
@@ -58,5 +58,5 @@ class MyTransformer(Transformer):
 
 
 def parser(data):
-    return Lark(dsl_grammar, parser='lalr', transformer=MyTransformer()).parse(data)
+    return Lark(dsl_grammar, parser='lalr', transformer=__transformer()).parse(data)
 
