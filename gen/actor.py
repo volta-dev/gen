@@ -1,4 +1,4 @@
-from gen.parser import parser
+from parser.parser import parser
 from gen.shared import get_exchange
 
 
@@ -8,111 +8,140 @@ class Actor:
 
     # generates the struct for the actor
     def __generate_actor_struct(self):
+        # Extract the exchange name from the abstract syntax tree (AST)
         exchange_name = get_exchange(self.ast)
-        golang_code = ["type {}Actor struct {{\n".format(exchange_name), "\tbroker *volta.App\n\n"]
 
+        # This list will hold lines of generated Go code
+        golang_code = []
+
+        # Start the struct declaration
+        golang_code.append(f"type {exchange_name}Actor struct {{\n")
+        golang_code.append("\tbroker *volta.App\n\n")
+
+        # Loop through child nodes in AST
         for node in self.ast.children:
             if node.data == 'action_def':
+                # For every action in the action definition, add a line to the struct
                 for action in node.children[0].children:
                     function_name = action.children[0]
+                    # Format the callback structure
+                    callback_format = f"\t{exchange_name[0].lower() + exchange_name[1:]}{function_name}" + \
+                                      f"Callback {exchange_name}{function_name}Callback\n"
+                    golang_code.append(callback_format)
 
-                    golang_code.append("\t{}{}Callback {}{}Callback\n".format
-                                       (exchange_name[0].lower() + exchange_name[1:], function_name, exchange_name,
-                                        function_name))
-
+        # End the struct declaration
         golang_code.append("}\n\n")
 
+        # Joining all the Go code lines into a single string
         return "".join(golang_code)
 
     # generates the constructor for the actor
     def __generate_actor_constructor(self):
+        # Extract the exchange name from the abstract syntax tree (AST)
         exchange = get_exchange(self.ast)
-        return "func New{}Actor(broker *volta.App) *{}Actor {{\n\treturn &{}Actor{{broker: broker}}\n}}\n\n".format(
-            exchange, exchange, exchange)
+
+        # Use f-string to interpolate variables into the string template
+        constructor = f"func New{exchange}Actor(broker *volta.App) *{exchange}Actor {{\n"
+        constructor += f"\treturn &{exchange}Actor{{broker: broker}}\n}}\n\n"
+
+        return constructor
 
     # generate the init function for exchange and queues
     def __generate_init(self):
+        # Get the exchange name from the AST.
         exchange_name = get_exchange(self.ast)
 
-        golang_code = ["func (actor *{}Actor) Init() {{\n".format(exchange_name),
-                       "\tactor.broker.AddExchanges(volta.Exchange{{Name: \"{}\", Type: \"topic\"}})\n\n".format(
-                           exchange_name[0].lower() + exchange_name[1:])]
+        # Initialize golang_code with the function signature.
+        golang_code = [
+            f"func (actor *{exchange_name}Actor) Init() {{\n",
+            f"\tactor.broker.AddExchanges(volta.Exchange{{Name: \"{exchange_name[0].lower() + exchange_name[1:]}\", Type: \"topic\"}})\n\n"
+        ]
 
+        # Scan the AST children.
         for node in self.ast.children:
             if node.data == 'action_def':
                 for action in node.children[0].children:
                     routing_key = action.children[3][1]
                     golang_code.append(
-                        "\tactor.broker.AddQueue(volta.Queue{{Name: {}, RoutingKey: {}, Exchange: \"{}\"}})\n".format(
-                            routing_key,
-                            routing_key, exchange_name[0].lower() + exchange_name[1:]))
+                        f"\tactor.broker.AddQueue(volta.Queue{{Name: {routing_key}, RoutingKey: {routing_key}, "
+                        f"Exchange: \"{exchange_name[0].lower() + exchange_name[1:]}\"}})\n"
+                    )
 
         for node in self.ast.children:
             if node.data == 'action_def':
                 for action in node.children[0].children:
                     routing_key = action.children[3][1]
+                    func_name = action.children[0]
+                    type_name = action.children[1][:1].lower() + action.children[1][1:]
                     func_arg = action.children[1] if action.children[1] is not None else ""
                     return_arg = action.children[2] if action.children[2] is not None else ""
 
-                    if func_arg == "" and return_arg == "":
-                        golang_code.append("\n\tactor.broker.AddConsumer({}, func (ctx *volta.Ctx) error {{\n"
-                                           "\t\tactor.{}{}Callback()\n"
-                                           "\t\treturn ctx.Ack(false)\n"
-                                           "\t}})\n".format(routing_key, exchange_name[0].lower() + exchange_name[1:],
-                                                            action.children[0]))
-                    elif func_arg == "" and return_arg != "":
-                        golang_code.append("\n\tactor.broker.AddConsumer({}, func (ctx *volta.Ctx) error {{\n"
-                                           "\t\treturn ctx.ReplyJSON(actor.{}{}Callback())\n"
-                                           "\t}})\n".format(routing_key, exchange_name[0].lower() + exchange_name[1:],
-                                                            action.children[0]))
-                    elif func_arg != "" and return_arg == "":
-                        golang_code.append("\n\tactor.broker.AddConsumer({}, func (ctx *volta.Ctx) error {{\n"
-                                           "\t\tvar data _internal{}\n"
-                                           "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
-                                           "\t\t\treturn err\n"
-                                           "\t\t}}\n"
-                                           "\t\tactor.{}{}Callback({}FromInternal(data))\n"
-                                           "\t\treturn ctx.Ack(false)\n"
-                                           "\t}})\n".format(routing_key, action.children[1],
-                                                            exchange_name[0].lower() + exchange_name[1:],
-                                                            action.children[0],
-                                                            action.children[1][:1].lower() + action.children[1][1:]))
-                    elif func_arg != "" and return_arg != "":
-                        golang_code.append("\n\tactor.broker.AddConsumer({}, func (ctx *volta.Ctx) error {{\n"
-                                           "\t\tvar data _internal{}\n"
-                                           "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
-                                           "\t\t\treturn err\n"
-                                           "\t\t}}\n"
-                                           "\t\treturn ctx.ReplyJSON(actor.{}{}Callback({}FromInternal(data)))\n"
-                                           "\t}})\n".format(routing_key, action.children[1],
-                                                            exchange_name[0].lower() + exchange_name[1:],
-                                                            action.children[0],
-                                                            action.children[1][:1].lower() + action.children[1][1:]))
+                    # Format and add the actor callback.
+                    exchange_name_lower = exchange_name[0].lower() + exchange_name[1:]
+                    golang_code.append(f"\n\tactor.broker.AddConsumer({routing_key}, func (ctx *volta.Ctx) error {{\n")
 
+                    # Different scenarios for generating specific parts of callback method
+                    # Uses f-strings to make string formatting clearer
+                    if func_arg == "" and return_arg == "":
+                        golang_code.append(f"\t\tactor.{exchange_name_lower}{func_name}Callback()\n"
+                                           "\t\treturn ctx.Ack(false)\n"
+                                           "\t}})\n")
+                    elif func_arg == "" and return_arg != "":
+                        golang_code.append(f"\t\treturn ctx.ReplyJSON(actor.{exchange_name_lower}{func_name}Callback())\n"
+                                           "\t}})\n")
+                    elif func_arg != "" and return_arg == "":
+                        golang_code.append(f"\t\tvar data _internal{func_arg}\n"
+                                           "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
+                                           "\t\t\treturn err\n"
+                                           "\t\t}}\n"
+                                           f"\t\tactor.{exchange_name_lower}{func_name}Callback({type_name}FromInternal(data))\n"
+                                           "\t\treturn ctx.Ack(false)\n"
+                                           "\t}})\n")
+                    elif func_arg != "" and return_arg != "":
+                        golang_code.append(f"\t\tvar data _internal{func_arg}\n"
+                                           "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
+                                           "\t\t\treturn err\n"
+                                           "\t\t}}\n"
+                                           f"\t\treturn ctx.ReplyJSON(actor.{exchange_name_lower}{func_name}Callback({type_name}FromInternal(data)))\n"
+                                           "\t}})\n")
+
+        # Append the closing bracket to the golang_code.
         golang_code.append("}\n\n")
 
+        # Join all elements of the golang_code into a single string and return.
         return "".join(golang_code)
 
     # generates the functions for the actor
     def __generate_funcs(self):
-        exchangeName = get_exchange(self.ast)
+        # Extract the exchange name from the AST
+        exchange_name = get_exchange(self.ast)
 
+        # Prepare for golang_code
         golang_code = ["\n"]
 
+        # Iterating over child nodes in AST
         for node in self.ast.children:
+
+            # Check if the child is an action definition
             if node.data == 'action_def':
+
+                # Iterating over all actions for this node
                 for action in node.children[0].children:
                     function_name = action.children[0]
 
-                    golang_code.append(
-                        "func (actor *{}Actor) Assign{}Callback(callback {}{}Callback) {{\n".format(
-                            exchangeName, function_name, exchangeName, function_name)
-                    )
-                    golang_code.append(
-                        "\tactor.{}{}Callback = callback\n".format(exchangeName[0].lower() + exchangeName[1:],
-                                                                   function_name))
+                    # Generate the function signature
+                    func_signature = f"func (actor *{exchange_name}Actor) Assign{function_name}"
+                    func_signature += f"Callback(callback {exchange_name}{function_name}Callback) {{\n"
+                    golang_code.append(func_signature)
+
+                    # Generate the callback assignment
+                    assignment = f"\tactor.{exchange_name[0].lower() + exchange_name[1:]}{function_name}Callback = callback\n"
+                    golang_code.append(assignment)
+
+                    # Closing bracket for the function
                     golang_code.append("}\n\n")
 
+        # Combine to form final golang code
         return "".join(golang_code)
 
     # generates the entire actor

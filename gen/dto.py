@@ -1,49 +1,53 @@
-from gen.parser import parser
+from parser.parser import parser
 
 
 class Dto:
     def __init__(self, input_string):
         self.ast = parser(input_string)
 
-    # __generate_struct generates a struct with the given name and fields, internal is used to generate the internal dto
-    def __generate_struct(self, struct_name, fields, internal=False):
+    def _generate_struct(self, struct_name, fields, internal=False):
+        # Formats struct field depends on internal type
         field_format = "\t{} {} `json:\"{}\"`\n" if not internal else "\t{} {} `json:\"{},omitempty\"`\n"
-        fields_str = [field_format.format(field_name.capitalize() if internal else field_name, field_type, field_name)
-                      for field_name, field_type in fields]
-        return ["type {} struct {{\n".format(struct_name), *fields_str, "}\n"]
 
-    # __generate_getters_and_setters generates the getters and setters for the struct
-    def __generate_getters_and_setters(self, struct_name, fields):
+        # List comprehensions is used instead of loop to generate fields string.
+        fields_str = [field_format.format(field_name.capitalize() if internal else field_name,
+                                          field_type, field_name)
+                      for field_name, field_type in fields]
+
+        # f-string is used for better readability
+        return [f"type {struct_name} struct {{\n", *fields_str, "}\n"]
+
+    def _generate_getters_and_setters(self, struct_name, fields):
         funcs = []
         for field_name, field_type in fields:
-            getter = ("\nfunc (s *{}) Get{}() {} {{\n"
-                      "\treturn s.{}\n"
-                      "}}\n").format(struct_name, field_name.capitalize(), field_type, field_name)
-            setter = ("\nfunc (s *{}) Set{}(value {}) {{\n"
-                      "\ts.{} = value\n"
-                      "}}\n").format(struct_name, field_name.capitalize(), field_type, field_name)
+            # f-string is used for better readability
+            getter = (f"\nfunc (s *{struct_name}) Get{field_name.capitalize()}() {field_type} {{\n"
+                      f"\treturn s.{field_name}\n"
+                      f"}}\n")
+            setter = (f"\nfunc (s *{struct_name}) Set{field_name.capitalize()}(value {field_type}) {{\n"
+                      f"\ts.{field_name} = value\n"
+                      f"}}\n")
+
             funcs.append(getter)
             funcs.append(setter)
 
-        funcs.append("\n")
-
         return funcs
 
-    # __generate_mapper_methods generates the ToInternal and FromInternal methods for the dto
-    def __generate_mapper_methods(self, struct_name, internal_struct_name, fields):
-        to_internal = ["\nfunc (s *{}) ToInternal() {} {{\n\tinternal := {}{}\n".format(struct_name, internal_struct_name,
-                                                                                      internal_struct_name, "{}")]
-        from_internal = ["func {}FromInternal(internal {}) {} {{\n\texternal := {}{}\n".format(
-            struct_name[:1].lower() + struct_name[1:], internal_struct_name, struct_name, struct_name, "{}")]
+    def _generate_mapper_methods(self, struct_name, internal_struct_name, fields):
+        # f-string is used for better readability
+        to_internal = [f"\nfunc (s *{struct_name}) ToInternal() {internal_struct_name} {{\n\tinternal := {internal_struct_name}{{}}\n"]
+        from_internal = [f"func {struct_name[:1].lower() + struct_name[1:]}FromInternal(internal {internal_struct_name}) {struct_name} {{\n\texternal := {struct_name}{{}}\n"]
+
         for field_name, _ in fields:
             export_field_name = field_name.capitalize()
-            to_internal.append("\tinternal.{} = s.Get{}()\n".format(export_field_name, field_name.capitalize()))
-            from_internal.append("\texternal.Set{}(internal.{})\n".format(field_name.capitalize(), export_field_name))
+            to_internal.append(f"\tinternal.{export_field_name} = s.Get{field_name.capitalize()}\n")
+            from_internal.append(f"\texternal.Set{field_name.capitalize()}(internal.{export_field_name})\n")
+
         to_internal.append("\treturn internal\n}\n\n")
         from_internal.append("\treturn external\n}\n\n")
+
         return to_internal + from_internal
 
-    # __generate_dto generates the entire dto structs
     def generate(self):
         dto = ["// DTO Section\n"]
         for node in self.ast.children:
@@ -53,9 +57,9 @@ class Dto:
                     internal_struct_name = '_internal' + struct_name
                     fields = [(params.children[0], params.children[1]) for params in t.children[1].children]
 
-                    dto += self.__generate_struct(struct_name, fields)
-                    dto += self.__generate_getters_and_setters(struct_name, fields)
-                    dto += self.__generate_struct(internal_struct_name, fields, internal=True)
-                    dto += self.__generate_mapper_methods(struct_name, internal_struct_name, fields)
+                    dto += self._generate_struct(struct_name, fields)
+                    dto += self._generate_getters_and_setters(struct_name, fields)
+                    dto += self._generate_struct(internal_struct_name, fields, internal=True)
+                    dto += self._generate_mapper_methods(struct_name, internal_struct_name, fields)
 
         return "".join(dto)
