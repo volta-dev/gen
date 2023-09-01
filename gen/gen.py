@@ -89,18 +89,11 @@ class Gen:
             if node.data == 'action_def':
                 for action in node.children[0].children:
                     function_name = action.children[0]
-                    action_arg = action.children[1] if action.children[1] != None else ""
-                    return_arg = action.children[2] if action.children[2] != None else ""
 
-                    if action_arg != "":
-                        golang_code.append(
-                            "func (h *{}Actor) Assign{}Callback(callback func(data {}) {}) {{"
-                            "\n\treturn \n"
-                            "}}\n\n".format(exchangeName, function_name, action_arg, return_arg))
-                    else:
-                        golang_code.append("func (h *{}Actor) Assign{}Callback(callback func()) {} {{"
-                                           "\n\treturn \n"
-                                           "}}\n\n".format(exchangeName, function_name, action_arg, return_arg))
+                    golang_code.append(
+                        "func (actor *{}Actor) {}(callback {}{}Callback) error {{\n".format(
+                            exchangeName, function_name, exchangeName, function_name)
+                    )
 
         return "".join(golang_code)
 
