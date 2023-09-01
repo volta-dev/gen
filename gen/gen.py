@@ -32,8 +32,8 @@ class Gen:
             return funcs
 
         def generate_mapper_methods(struct_name, internal_struct_name, fields):
-            to_internal = ["func (s *{}) ToInternal() *{} {{\n\tinternal := &{}{}\n".format(struct_name, internal_struct_name, internal_struct_name, "{}")]
-            from_internal = ["func {}FromInternal(internal *{}) *{} {{\n\texternal := &{}{}\n".format(struct_name[:1].lower()+struct_name[1:], internal_struct_name, struct_name, struct_name, "{}")]
+            to_internal = ["func (s *{}) ToInternal() {} {{\n\tinternal := {}{}\n".format(struct_name, internal_struct_name, internal_struct_name, "{}")]
+            from_internal = ["func {}FromInternal(internal {}) {} {{\n\texternal := {}{}\n".format(struct_name[:1].lower()+struct_name[1:], internal_struct_name, struct_name, struct_name, "{}")]
             for field_name, _ in fields:
                 export_field_name = field_name.capitalize()
                 to_internal.append("\tinternal.{} = s.Get{}()\n".format(export_field_name, field_name.capitalize()))
@@ -116,7 +116,7 @@ class Gen:
         exchange_name = self.__get_exchange(self.ast)
 
         golang_code = ["func (actor *{}Actor) Init() {{\n".format(exchange_name)]
-        golang_code.append("\tactor.broker.AddExchanges(volta.Exchange{{Name: \"{}\"}})\n\n".format(exchange_name[0].lower() + exchange_name[1:]))
+        golang_code.append("\tactor.broker.AddExchanges(volta.Exchange{{Name: \"{}\", Type: \"topic\"}})\n\n".format(exchange_name[0].lower() + exchange_name[1:]))
 
         for node in self.ast.children:
             if node.data == 'action_def':
