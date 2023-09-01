@@ -5,20 +5,18 @@ exchange = "user"
 
 types {
     CreateUser {
-        name string @required
-        email int @required
-        password bool @required
+        name string
+        email int
+        password bool
     }
     ReturnUser {
         id int
-        name string
-        email int
     }
 }
 
 actions {
     Register(CreateUser) ReturnUser @routingKey("user.register")
-    Fetch1() ReturnUser @routingKey("user.test")
+    Fetch1(ReturnUser) @routingKey("user.test")
 }
 '''
 
