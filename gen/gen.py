@@ -26,6 +26,10 @@ class Gen:
                         elif field_type.lower() == 'bool':
                             field_type = 'bool'
 
+                        if params.children[2] is not None:
+                            if params.children[2].children[0] is not None:
+                                field_type = '*' + field_type
+
                         fields.append((field_name, field_type))
                         dto.append("\t{} {} `json:\"{}\"`\n".format(field_name, field_type, field_name))
 
@@ -101,7 +105,7 @@ class Gen:
                     function_name = action.children[0]
 
                     golang_code.append(
-                        "func (actor *{}Actor) Assign{}Callback(callback {}{}Callback) error {{\n".format(
+                        "func (actor *{}Actor) Assign{}Callback(callback {}{}Callback) {{\n".format(
                             exchangeName, function_name, exchangeName, function_name)
                     )
                     golang_code.append("\tactor.{}{}Callback = callback\n".format(exchangeName[0].lower() + exchangeName[1:], function_name))
