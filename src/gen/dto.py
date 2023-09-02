@@ -1,17 +1,16 @@
-from parser.parser import parser
+from src.parser.parser import parser
 
 
 class Dto:
     def __init__(self, input_string):
         self.ast = parser(input_string)
 
-    def _generate_struct(self, struct_name, fields, internal=False):
+    def _generate_struct(self, struct_name, fields):
         # Formats struct field depends on internal type
-        field_format = "\t{} {} `json:\"{}\"`\n" if not internal else "\t{} {} `json:\"{},omitempty\"`\n"
+        field_format = "\t{} {} `json:\"{},omitempty\"`\n"
 
         # List comprehensions is used instead of loop to generate fields string.
-        fields_str = [field_format.format(field_name.capitalize() if internal else field_name,
-                                          field_type, field_name)
+        fields_str = [field_format.format(field_name.capitalize(), field_type, field_name)
                       for field_name, field_type in fields]
 
         # f-string is used for better readability
@@ -59,7 +58,5 @@ class Dto:
 
                     dto += self._generate_struct(struct_name, fields)
                     dto += self._generate_getters_and_setters(struct_name, fields)
-                    dto += self._generate_struct(internal_struct_name, fields, internal=True)
-                    dto += self._generate_mapper_methods(struct_name, internal_struct_name, fields)
 
         return "".join(dto)

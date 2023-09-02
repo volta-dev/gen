@@ -1,5 +1,5 @@
-from parser.parser import parser
-from gen.shared import get_exchange
+from src.parser.parser import parser
+from src.gen.shared import get_exchange
 
 
 class Typer:
