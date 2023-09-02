@@ -74,5 +74,5 @@ class __transformer(Transformer):
 
 
 def parser(data):
-    return Lark(dsl_grammar, parser='lalr', transformer=__transformer()).parse(data)
+    return Lark(dsl_grammar, parser='lalr', transformer=__transformer(), ).parse(data)
 

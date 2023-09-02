@@ -166,3 +166,5 @@ cython_debug/
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/deployment.xml
 *.go
+*.volta
+

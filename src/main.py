@@ -1,35 +1,30 @@
 import src.gen.server as actor
 import src.gen.dto as dto
 import src.gen.typer as typer
-
-test_input = '''
-exchange = "user"
-
-types {
-    CreateUser {
-        name string
-        email int
-        password bool
-    }
-    ReturnUser {
-        id int
-    }
-}
-
-actions {
-    Register(CreateUser) ReturnUser @routingKey("user.register")
-    Fetch1(ReturnUser) @routingKey("user.test")
-}
-'''
+import argparse
 
 
 def main():
-    dtogen = dto.Dto(test_input)
-    actorgen = actor.Server(test_input)
-    typergen = typer.Typer(test_input)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", help="File ", default="volta.volta")
+    parser.add_argument("-o", "--output", help="User name")
+    args = parser.parse_args()
 
-    # write to file
-    with open('exchange_gen.go', 'w') as f:
-        f.write(dtogen.generate())
-        f.write(typergen.generate())
-        f.write(actorgen.generate())
+    # read file from flag
+    file_data = ''
+    with open(args.file, 'r') as f:
+        file_data = f.read()
+
+        dtogen = dto.Dto(file_data)
+        actorgen = actor.Server(file_data)
+        typergen = typer.Typer(file_data)
+
+        # write to file
+        with open(args.output, 'w') as f:
+            f.write(dtogen.generate())
+            f.write(typergen.generate())
+            f.write(actorgen.generate())
+
+
+if __name__ == "__main__":
+    main()
