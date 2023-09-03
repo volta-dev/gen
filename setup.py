@@ -4,8 +4,8 @@ setup(
     name='volta-gen',
     version='1.0.0',
     packages=find_packages(),
-    requires=['lark'],
-    install_requires=['lark'],
+    requires=['python-hcl2'],
+    install_requires=['python-hcl2'],
     author='kaazedev',
     license='MIT',
     project_urls={
