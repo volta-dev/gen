@@ -11,7 +11,8 @@ class Dto:
 
         fields_str = []
         for field in fields:
-            fields_str.append(field_format.format(field.capitalize(), fields[field][0], field.lower()))
+            field_type = fields[field][0]
+            fields_str.append(field_format.format(field.capitalize(), field_type, field.lower()))
 
         # f-string is used for better readability
         return [f"type {struct_name} struct {{\n", *fields_str, "}\n"]
@@ -19,11 +20,13 @@ class Dto:
     def _generate_getters_and_setters(self, struct_name, fields):
         funcs = []
         for field in fields:
+            field_type = fields[field][0]
+
             # f-string is used for better readability
-            getter = (f"\nfunc (s *{struct_name}) Get{field.capitalize()}() {fields[field][0]} {{\n"
+            getter = (f"\nfunc (s *{struct_name}) Get{field.capitalize()}() {field_type} {{\n"
                       f"\treturn s.{field}\n"
                       f"}}\n")
-            setter = (f"\nfunc (s *{struct_name}) Set{field.capitalize()}(value {fields[field][0]}) {{\n"
+            setter = (f"\nfunc (s *{struct_name}) Set{field.capitalize()}(value {field_type}) {{\n"
                       f"\ts.{field} = value\n"
                       f"}}\n")
 
