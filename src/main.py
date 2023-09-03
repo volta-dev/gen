@@ -2,7 +2,6 @@ import src.gen.server as actor
 import src.gen.dto as dto
 import src.gen.typer as typer
 import argparse
-import hcl2
 
 
 def main():
@@ -13,15 +12,17 @@ def main():
 
     # read file from flag
     with open(args.file, 'r') as f:
-        dtogen = dto.Dto(f)
-        # actorgen = actor.Server(data)
-        # typergen = typer.Typer(data)
-        #
-        # write to file
-        with open(args.output, 'w') as f:
-              f.write(dtogen.generate())
-        #     f.write(typergen.generate())
-        #     f.write(actorgen.generate())
+        data = f.read()
+
+    dtogen = dto.Dto(data)
+    typergen = typer.Typer(data)
+    # actorgen = actor.Server(data)
+    #
+    # write to file
+    with open(args.output, 'w') as f:
+        f.write(dtogen.generate())
+        f.write(typergen.generate())
+        # f.write(actorgen.generate())
 
 
 if __name__ == "__main__":

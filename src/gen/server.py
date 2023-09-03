@@ -1,6 +1,4 @@
 import hcl2
-from src.gen.shared import get_exchange
-
 
 class Server:
     def __init__(self, input_string):

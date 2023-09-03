@@ -1,15 +1,14 @@
-from src.gen.shared import get_exchange
 import hcl2
 
 
 class Typer:
     def __init__(self, input_string):
-        self.ast = hcl2.load(input_string)
+        self.data = hcl2.loads(input_string)
 
     # generate constants for the actor
     def __generate_constants(self):
         # Extract the exchange name from the abstract syntax tree
-        exchange_name = get_exchange(self.ast)
+        exchange_name = self.data['exchange']
 
         # Start with a comment in the code
         golang_code = ["\n// Constants Section\n"]
@@ -18,41 +17,31 @@ class Typer:
         lower_exchange_name = exchange_name.lower()
         golang_code.append(f"const {lower_exchange_name}Exchange = \"{lower_exchange_name}\"\n")
 
-        # Iterate over the actions defined in the AST
-        for node in self.ast.children:
-            if node.data == 'action_def':
-                for action in node.children[0].children:
-                    function_name = action.children[0]
-                    routing_key = action.children[3][1]
-
-                    # For each action, create a constant for the routing key
-                    golang_code.append(f"const {lower_exchange_name}{function_name} = {routing_key}\n")
+        # Iterate over the actions defined
+        for action in self.data['actions']:
+            for name in action:
+                golang_code.append(f"const {lower_exchange_name}{name} = \"{action[name]['routing']}\"\n")
 
         # Join the generated lines of code into a single string and return
         return "".join(golang_code)
 
     # generate callback type for the actor
     def __generate_callback_type(self):
-        # Extract the exchange name from the AST
-        exchange_name = get_exchange(self.ast)
+        # Extract the exchange name
+        exchange_name = self.data['exchange']
 
         # Begin golang_code's array with a comment to indicate where the Callback Type Section begins
         golang_code = ["\n// Callback Type Section\n"]
 
-        # Traverse through child nodes in the AST
-        for node in self.ast.children:
-            if node.data == 'action_def':
-                # Within each 'action_def' node, traverse its children
-                for action in node.children[0].children:
-                    function_name = action.children[0]
+        # Traverse through the actions
+        for action in self.data['actions']:
+            for name in action:
+                # Get 'action_arg' if they exist, else leave as empty string
+                action_arg = "" if action[name]['input'] is None else f"data {action[name]['input']}"
 
-                    # Get 'action_arg' and 'return_arg' if they exist, else leave as empty string
-                    action_arg = "" if action.children[1] is None else f"data {action.children[1]}"
-                    return_arg = "" if action.children[2] is None else action.children[2]
-
-                    # Generate function definition and append to the golang_code list
-                    callback_type = f"type {exchange_name}{function_name}Callback func({action_arg}) {return_arg}\n"
-                    golang_code.append(callback_type)
+                # Generate function definition and append to the golang_code list
+                callback_type = f"type {exchange_name}{name}Callback func({action_arg}) {action[name]['output']}\n"
+                golang_code.append(callback_type)
 
         golang_code.append("\n")
 

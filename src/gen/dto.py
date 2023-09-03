@@ -3,7 +3,7 @@ import hcl2
 
 class Dto:
     def __init__(self, input_string):
-        self.data = hcl2.load(input_string)
+        self.data = hcl2.loads(input_string)
 
     def _generate_struct(self, struct_name, fields):
         # Formats struct field depends on internal type
@@ -33,6 +33,8 @@ class Dto:
             funcs.append(getter)
             funcs.append(setter)
 
+        funcs.append("\n")
+
         return funcs
 
     def generate(self):
@@ -40,8 +42,7 @@ class Dto:
 
         for types in self.data['types']:
             for typeNames in types:
-                for params in types[typeNames]:
-                    dto += self._generate_struct(typeNames, types[typeNames])
-                    dto += self._generate_getters_and_setters(typeNames, types[typeNames])
+                dto += self._generate_struct(typeNames, types[typeNames])
+                dto += self._generate_getters_and_setters(typeNames, types[typeNames])
 
         return "".join(dto)
