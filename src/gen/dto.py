@@ -1,9 +1,9 @@
-from src.parser.parser import parser
+import hcl2
 
 
 class Dto:
     def __init__(self, input_string):
-        self.ast = parser(input_string)
+        self.data = hcl2.load(input_string)
 
     def _generate_struct(self, struct_name, fields):
         # Formats struct field depends on internal type
@@ -49,14 +49,11 @@ class Dto:
 
     def generate(self):
         dto = ["// DTO Section\n"]
-        for node in self.ast.children:
-            if node.data == 'type_def':
-                for t in node.children[0].children:
-                    struct_name = t.children[0]
-                    internal_struct_name = '_internal' + struct_name
-                    fields = [(params.children[0], params.children[1]) for params in t.children[1].children]
 
-                    dto += self._generate_struct(struct_name, fields)
-                    dto += self._generate_getters_and_setters(struct_name, fields)
+        for types in self.data['types']:
+            for typeNames in types:
+                for params in types[typeNames]:
+                    dto += self._generate_struct(typeNames, params)
+                    dto += self._generate_getters_and_setters(typeNames, params)
 
         return "".join(dto)

@@ -1,10 +1,10 @@
-from src.parser.parser import parser
 from src.gen.shared import get_exchange
+import hcl2
 
 
 class Typer:
     def __init__(self, input_string):
-        self.ast = parser(input_string)
+        self.ast = hcl2.load(input_string)
 
     # generate constants for the actor
     def __generate_constants(self):

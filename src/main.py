@@ -2,28 +2,33 @@ import src.gen.server as actor
 import src.gen.dto as dto
 import src.gen.typer as typer
 import argparse
+import hcl2
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file", help="File ", default="volta.volta")
-    parser.add_argument("-o", "--output", help="User name")
+    parser.add_argument("-f", "--file", default="volta.hcl")
+    parser.add_argument("-o", "--output", default="output.go")
     args = parser.parse_args()
 
     # read file from flag
-    file_data = ''
     with open(args.file, 'r') as f:
-        file_data = f.read()
+        data = hcl2.load(f)
 
-        dtogen = dto.Dto(file_data)
-        actorgen = actor.Server(file_data)
-        typergen = typer.Typer(file_data)
+        for types in data['types']:
+            for typeNames in types:
+                for params in types[typeNames]:
+                    print(params)
 
+        # dtogen = dto.Dto(data)
+        # actorgen = actor.Server(data)
+        # typergen = typer.Typer(data)
+        #
         # write to file
-        with open(args.output, 'w') as f:
-            f.write(dtogen.generate())
-            f.write(typergen.generate())
-            f.write(actorgen.generate())
+        # with open(args.output, 'w') as f:
+        #     f.write(dtogen.generate())
+        #     f.write(typergen.generate())
+        #     f.write(actorgen.generate())
 
 
 if __name__ == "__main__":

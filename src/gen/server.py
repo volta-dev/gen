@@ -1,10 +1,10 @@
-from src.parser.parser import parser
+import hcl2
 from src.gen.shared import get_exchange
 
 
 class Server:
     def __init__(self, input_string):
-        self.ast = parser(input_string)
+        self.ast = hcl2.load(input_string)
 
     # generates the struct for the server
     def __generate_server_struct(self):
@@ -87,8 +87,9 @@ class Server:
                                            "\t\treturn ctx.Ack(false)\n"
                                            "\t}})\n")
                     elif func_arg == "" and return_arg != "":
-                        golang_code.append(f"\t\treturn ctx.ReplyJSON(server.{exchange_name_lower}{func_name}Callback())\n"
-                                           "\t}})\n")
+                        golang_code.append(
+                            f"\t\treturn ctx.ReplyJSON(server.{exchange_name_lower}{func_name}Callback())\n"
+                            "\t}})\n")
                     elif func_arg != "" and return_arg == "":
                         golang_code.append(f"\t\tvar data {func_arg}\n"
                                            "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
