@@ -13,20 +13,13 @@ def main():
 
     # read file from flag
     with open(args.file, 'r') as f:
-        data = hcl2.load(f)
-
-        for types in data['types']:
-            for typeNames in types:
-                for params in types[typeNames]:
-                    print(params)
-
-        # dtogen = dto.Dto(data)
+        dtogen = dto.Dto(f)
         # actorgen = actor.Server(data)
         # typergen = typer.Typer(data)
         #
         # write to file
-        # with open(args.output, 'w') as f:
-        #     f.write(dtogen.generate())
+        with open(args.output, 'w') as f:
+              f.write(dtogen.generate())
         #     f.write(typergen.generate())
         #     f.write(actorgen.generate())
 

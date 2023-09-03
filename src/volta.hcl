@@ -3,14 +3,14 @@ exchange = "user"
 types {
     CreateUser = {
         Username = ["string", "required"]
-        Email = [string, required]
-        Password = [string, required]
+        Email = ["string", "string"]
+        Password = ["string", "string"]
     }
     User = {
-        Id = [string]
-        Username = [string]
-        Email = [string]
-        Password = [string]
+        Id = ["string"]
+        Username = ["string"]
+        Email = ["string"]
+        Password = ["string"]
     }
 }
 
