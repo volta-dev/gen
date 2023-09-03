@@ -48,6 +48,17 @@ class Server:
             f"\tserver.broker.AddExchanges(volta.Exchange{{Name: \"{exchange_name}\", Type: \"topic\"}})\n\n"
         ]
 
+        # generate check is all callbacks assigned
+        for action in self.data['actions']:
+            for name in action:
+                golang_code.append(
+                    f"\tif server.{exchange_name}{name}Callback == nil {{\n"
+                    f"\t\tlog.Fatal(\"{exchange_name}{name}Callback is not assigned\")\n"
+                    f"\t}}\n"
+                )
+
+        golang_code.append("\n")
+
         # Iterate over the actions defined
         for action in self.data['actions']:
             for name in action:
