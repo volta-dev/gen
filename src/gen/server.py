@@ -45,7 +45,7 @@ class Server:
         # Initialize golang_code with the function signature.
         golang_code = [
             f"func (server *{exchange_name.capitalize()}Server) Init() {{\n",
-            f"\tserver.broker.AddExchanges(volta.Exchange{{Name: \"{exchange_name}\", Type: \"topic\"}})\n\n"
+            f"\tserver.broker.AddExchanges(volta.Exchange{{Name: {exchange_name}Exchange, Type: \"topic\"}})\n\n"
         ]
 
         # generate check is all callbacks assigned
@@ -64,7 +64,7 @@ class Server:
             for name in action:
                 golang_code.append(
                     f"\tserver.broker.AddQueue(volta.Queue{{Name: {exchange_name}{name}, RoutingKey: {exchange_name}{name}, "
-                    f"Exchange: \"{exchange_name}\"}})\n"
+                    f"Exchange: {exchange_name}Exchange}})\n"
                 )
 
         for action in self.data['actions']:
