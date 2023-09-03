@@ -16,13 +16,13 @@ def main():
 
     dtogen = dto.Dto(data)
     typergen = typer.Typer(data)
-    # actorgen = actor.Server(data)
-    #
+    servergen = actor.Server(data)
+
     # write to file
     with open(args.output, 'w') as f:
         f.write(dtogen.generate())
         f.write(typergen.generate())
-        # f.write(actorgen.generate())
+        f.write(servergen.generate())
 
 
 if __name__ == "__main__":
