@@ -14,13 +14,12 @@ class Typer:
         golang_code = ["\n// Constants Section\n"]
 
         # Create a constant for the exchange name
-        lower_exchange_name = exchange_name.lower()
-        golang_code.append(f"const {lower_exchange_name}Exchange = \"{lower_exchange_name}\"\n")
+        golang_code.append(f"const {exchange_name.capitalize()}Exchange = \"{exchange_name}\"\n")
 
         # Iterate over the actions defined
         for action in self.data['actions']:
             for name in action:
-                golang_code.append(f"const {lower_exchange_name}{name} = \"{action[name]['routing']}\"\n")
+                golang_code.append(f"const {exchange_name.capitalize()}{name} = \"{action[name]['routing']}\"\n")
 
         # Join the generated lines of code into a single string and return
         return "".join(golang_code)
@@ -40,7 +39,7 @@ class Typer:
                 action_arg = "" if action[name]['input'] is None else f"data {action[name]['input']}"
 
                 # Generate function definition and append to the golang_code list
-                callback_type = f"type {exchange_name}{name}Callback func({action_arg}) {action[name]['output']}\n"
+                callback_type = f"type {exchange_name.capitalize()}{name}Callback func({action_arg}) {action[name]['output']}\n"
                 golang_code.append(callback_type)
 
         golang_code.append("\n")

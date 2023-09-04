@@ -19,7 +19,7 @@ class Server:
         for action in self.data['actions']:
             for name in action:
                 golang_code.append(
-                    f"\t{exchange_name[0].lower() + exchange_name[1:]}{name}Callback {exchange_name}{name}Callback\n"
+                    f"\t{exchange_name[0].lower() + exchange_name[1:]}{name}Callback {exchange_name.capitalize()}{name}Callback\n"
                 )
 
         # End the struct declaration
@@ -45,7 +45,7 @@ class Server:
         # Initialize golang_code with the function signature.
         golang_code = [
             f"func (server *{exchange_name.capitalize()}Server) Init() {{\n",
-            f"\tserver.broker.AddExchanges(volta.Exchange{{Name: {exchange_name}Exchange, Type: \"topic\"}})\n\n"
+            f"\tserver.broker.AddExchanges(volta.Exchange{{Name: {exchange_name.capitalize()}Exchange, Type: \"topic\"}})\n\n"
         ]
 
         # generate check is all callbacks assigned
@@ -53,7 +53,7 @@ class Server:
             for name in action:
                 golang_code.append(
                     f"\tif server.{exchange_name}{name}Callback == nil {{\n"
-                    f"\t\tlog.Fatal(\"{exchange_name}{name}Callback is not assigned\")\n"
+                    f"\t\tlog.Fatal(\"{exchange_name.capitalize()}{name}Callback is not assigned\")\n"
                     f"\t}}\n"
                 )
 
@@ -63,8 +63,8 @@ class Server:
         for action in self.data['actions']:
             for name in action:
                 golang_code.append(
-                    f"\tserver.broker.AddQueue(volta.Queue{{Name: {exchange_name}{name}, RoutingKey: {exchange_name}{name}, "
-                    f"Exchange: {exchange_name}Exchange}})\n"
+                    f"\tserver.broker.AddQueue(volta.Queue{{Name: {exchange_name.capitalize()}{name}, RoutingKey: {exchange_name.capitalize()}{name}, "
+                    f"Exchange: {exchange_name.capitalize()}Exchange}})\n"
                 )
 
         for action in self.data['actions']:
@@ -73,33 +73,33 @@ class Server:
                 return_arg = action[name]['output']
 
                 # Format and add the server callback.
-                golang_code.append(f"\n\tserver.broker.AddConsumer({exchange_name}{name}, func (ctx *volta.Ctx) error {{\n")
+                golang_code.append(f"\n\tserver.broker.AddConsumer({exchange_name.capitalize()}{name}, func (ctx *volta.Ctx) error {{\n")
 
                 # Different scenarios for generating specific parts of callback method
                 # Uses f-strings to make string formatting clearer
                 if func_arg == "" and return_arg == "":
                     golang_code.append(f"\t\tserver.{exchange_name}{name}Callback()\n"
                                        "\t\treturn ctx.Ack(false)\n"
-                                       "\t}})\n")
+                                       "\t})\n")
                 elif func_arg == "" and return_arg != "":
                     golang_code.append(
                         f"\t\treturn ctx.ReplyJSON(server.{exchange_name}{name}Callback())\n"
                         "\t}})\n")
                 elif func_arg != "" and return_arg == "":
                     golang_code.append(f"\t\tvar data {func_arg}\n"
-                                       "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
+                                       "\t\tif err := ctx.BindJSON(&data); err != nil {\n"
                                        "\t\t\treturn err\n"
-                                       "\t\t}}\n"
+                                       "\t\t}\n"
                                        f"\t\tserver.{exchange_name}{name}Callback(data)\n"
                                        "\t\treturn ctx.Ack(false)\n"
-                                       "\t}})\n")
+                                       "\t})\n")
                 elif func_arg != "" and return_arg != "":
                     golang_code.append(f"\t\tvar data {func_arg}\n"
-                                       "\t\tif err := ctx.BindJSON(&data); err != nil {{\n"
+                                       "\t\tif err := ctx.BindJSON(&data); err != nil {\n"
                                        "\t\t\treturn err\n"
-                                       "\t\t}}\n"
+                                       "\t\t}\n"
                                        f"\t\treturn ctx.ReplyJSON(server.{exchange_name}{name}Callback(data))\n"
-                                       "\t}})\n")
+                                       "\t})\n")
 
         # Append the closing bracket to the golang_code.
         golang_code.append("}\n\n")
