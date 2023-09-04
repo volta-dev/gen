@@ -2,6 +2,7 @@ import src.gen.server as server
 import src.gen.client as client
 import src.gen.dto as dto
 import src.gen.typer as typer
+import src.gen.validator as validator
 import argparse
 
 
@@ -14,6 +15,11 @@ def main():
     # read file from flag
     with open(args.file, 'r') as f:
         data = f.read()
+
+    # validate
+    validate = validator.SchemaValidator(data)
+    if not validate.validate():
+        return
 
     dtogen = dto.Dto(data)
     typergen = typer.Typer(data)
