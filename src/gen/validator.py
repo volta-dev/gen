@@ -20,31 +20,40 @@ class SchemaValidator:
         return 'exchange' in self.data
 
     def __check_types(self):
+        custom_types = []
+        for types in self.data['types']:
+            for field in types:
+                custom_types.append(field)
+
         for types in self.data['types']:
             for field in types:
                 for params in types[field]:
-                    if types[field][params][0] not in golang_types:
+                    # check what field name not starting from number
+                    if field[0].isdigit():
+                        raise ValueError(f"Field name {field} cannot start from number")
+
+                    if types[field][params][0] not in golang_types and types[field][params][0] not in custom_types:
                         raise ValueError(f"Type {types[field][params][0]} is not a golang type")
 
         return True
 
     def __check_action_type(self):
-        isNotError = True
+        is_not_error = True
 
-        customTypes = []
+        custom_types = []
         for types in self.data['types']:
             for field in types:
-                customTypes.append(field)
+                custom_types.append(field)
 
         # check for types in actions
         for action in self.data['actions']:
             for field in action:
-                if action[field]['input'] not in customTypes and action[field]['input'] not in golang_types:
-                    raise ValueError(f"Type {action[field]['input']} is not defined")
-                if action[field]['output'] not in customTypes and action[field]['output'] not in golang_types:
-                    raise ValueError(f"Type {action[field]['input']} is not defined")
+                if action[field]['input'] not in custom_types and action[field]['input'] not in golang_types:
+                    raise ValueError(f"Input type {action[field]['input']} is not defined")
+                if action[field]['output'] not in custom_types and action[field]['output'] not in golang_types:
+                    raise ValueError(f"Output type {action[field]['output']} is not defined")
 
-        return isNotError
+        return is_not_error
 
     def validate(self):
         if not self.__exchange_exist():

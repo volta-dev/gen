@@ -12,7 +12,7 @@ class Dto:
         fields_str = []
         for field in fields:
             field_type = fields[field][0]
-            fields_str.append(field_format.format(field.capitalize(), field_type, field.lower()))
+            fields_str.append(field_format.format(field[:1].capitalize() + field[1:], field_type, field))
 
         # f-string is used for better readability
         return [f"type {struct_name} struct {{\n", *fields_str, "}\n"]
@@ -23,10 +23,10 @@ class Dto:
             field_type = fields[field][0]
 
             # f-string is used for better readability
-            getter = (f"\nfunc (s *{struct_name}) Get{field.capitalize()}() {field_type} {{\n"
+            getter = (f"\nfunc (s *{struct_name}) Get{field[:1].capitalize() + field[1:]}() {field_type} {{\n"
                       f"\treturn s.{field}\n"
                       f"}}\n")
-            setter = (f"\nfunc (s *{struct_name}) Set{field.capitalize()}(value {field_type}) {{\n"
+            setter = (f"\nfunc (s *{struct_name}) Set{field[:1].capitalize() + field[1:]}(value {field_type}) {{\n"
                       f"\ts.{field} = value\n"
                       f"}}\n")
 

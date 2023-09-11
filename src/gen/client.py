@@ -1,5 +1,7 @@
 import hcl2
 
+from src.gen.validator import golang_types
+
 
 class Client:
     def __init__(self, input_string):
@@ -52,7 +54,10 @@ class Client:
                 # Generate the callback assignment
                 assignment = f"\t"
                 if action[name]['output'] != "":
-                    assignment += f"result := &{action[name]['output']}{{}}\n"
+                    if action[name]['output'] not in golang_types:
+                        assignment += f"result := &{action[name]['output']}{{}}\n"
+                    else:
+                        assignment += f"var result {action[name]['output']}\n"
                     assignment += f"\tif err := client.broker.RequestJSON({exchange_name.capitalize()}{name}, {exchange_name.capitalize()}Exchange, data, &result); err != nil{{\n"
                     assignment += f"\t\treturn nil, err\n\t}}\n"
                     assignment += f"\treturn result, nil\n}}\n\n"
